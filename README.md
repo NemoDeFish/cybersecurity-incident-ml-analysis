@@ -1,33 +1,67 @@
 # Cybersecurity Incident Classification - Machine Learning Analysis
 
-## Overview
+This project applies machine learning to real-world SOC telemetry to reduce false positives and prioritize high-risk security incidents. Using supervised classification and MITRE ATT&CK–based pattern mining on **100,000 incidents sampled from a 13M+ record dataset**, the system identifies which alerts are most likely to represent true threats and highlights the most dangerous adversarial behaviors.
 
-Security Operations Centers (SOCs) receive large volumes of alerts daily, many of which do not represent real threats. Accurately identifying **true positive (TP)** security incidents is critical for reducing analyst workload and prioritizing responses. The project combines interpretable supervised models with clustering-based adversarial pattern analysis.
+📄 **Full technical report:**
+[Cybersecurity_Incident_Classification.pdf](report/Cybersecurity_Incident_Classification_Report.pdf)
 
 ---
 
-## Research Questions
+## Overview
 
-1. **Feature Group Impact**
-   Which categories of features (Organization, Detection, Entity, Account, Network, Location) contribute most to predicting true positive incidents?
+Security Operations Centers (SOCs) process enormous volumes of alerts every day, many of which do not represent real threats. Accurately identifying **true positive (TP)** incidents is critical for reducing analyst workload and ensuring timely response to high-risk attacks.
 
-2. **MITRE ATT&CK Technique Patterns**
-   Which techniques frequently co-occur in confirmed incidents, and what adversarial patterns emerge?
+This project combines:
 
-3. **Temporal Effects**
-   How do time-based features affect classification performance across different model families?
+- **Interpretable supervised learning** for incident classification
+- **MITRE ATT&CK–aligned unsupervised analysis** for adversarial behavior discovery
+- **Temporal feature evaluation** across multiple model families
+
+---
+
+## Key Findings (Summary)
+
+- **Decision Trees achieved 77% accuracy**, substantially outperforming Naïve Bayes on incident classification.
+- **Detection and organizational metadata** dominate predictive power, accounting for over 90% of feature importance.
+- **Credential abuse (Valid Accounts)** and **obfuscation-based techniques** form the highest-risk MITRE ATT&CK clusters.
+- **Time-based features improve Logistic Regression and ANN performance**, but degrade linear SVM under class imbalance.
+- Risk is driven more by _which techniques are used_ than by the number of techniques in an attack pattern.
+
+---
+
+## Why This Matters
+
+SOC teams operate under extreme alert volume and limited analyst time.
+This project demonstrates how **interpretable ML models** and **MITRE ATT&CK–aligned analysis** can:
+
+- Reduce analyst fatigue by prioritizing true threats
+- Explain _why_ an alert is risky, not just assign a score
+- Bridge ML outputs with frameworks already used by security teams
+
+---
+
+## Project Objectives
+
+1. **Feature Impact Analysis**
+   Identify which categories of alert metadata (Organization, Detection, Entity, Account, Network, Location) most strongly predict true security incidents.
+
+2. **Adversarial Behavior Analysis**
+   Discover high-risk MITRE ATT&CK technique combinations observed in confirmed incidents using clustering and risk-weighted pattern analysis.
+
+3. **Temporal Signal Evaluation**
+   Measure how time-based features affect classification performance across linear, margin-based, and neural models.
 
 ---
 
 ## Dataset
 
-This project uses the **Microsoft Security Incident Prediction Dataset** (Freitas et al., 2024), the largest publicly available dataset of real-world cybersecurity incidents.
+This project uses the **Microsoft Security Incident Prediction Dataset** (Freitas et al., 2024), one of the largest publicly available collections of real-world SOC telemetry.
 
-* ~13 million telemetry records
-* ~1 million labeled incidents (TP / BP / FP)
-* 6,100 organizations
-* 441 MITRE ATT&CK techniques
-* Collected from production SOC telemetry (Microsoft Defender XDR)
+- ~13 million telemetry records
+- ~1 million labeled incidents (TP / BP / FP)
+- 6,100 organizations
+- 441 MITRE ATT&CK techniques
+- Collected from production Microsoft Defender XDR environments
 
 🔗 **Dataset:**
 [Microsoft Security Incident Prediction – Kaggle](https://www.kaggle.com/datasets/Microsoft/microsoft-security-incident-prediction/data)
@@ -36,7 +70,7 @@ This project uses the **Microsoft Security Incident Prediction Dataset** (Freita
 
 ## Repository Structure
 
-```text
+```
 ├── README.md
 │
 ├── dataset/
@@ -60,9 +94,12 @@ This project uses the **Microsoft Security Incident Prediction Dataset** (Freita
 │   └── ResultQ3.py              # Time-feature experiments
 │
 ├── output/
-│   ├── TechniquePatternPlotting.py
+│   └── TechniquePatternPlotting.py
 │
-└── Requirements.txt
+├── report/
+│   └── Incident_Prediction_and_MITRE_Analysis.pdf
+│
+└── requirements.txt
 ```
 
 ---
@@ -71,29 +108,17 @@ This project uses the **Microsoft Security Incident Prediction Dataset** (Freita
 
 ### Supervised Learning
 
-* **Decision Tree** — feature importance & interpretability
-* **Naïve Bayes** — probabilistic baseline + mutual information
-* **Logistic Regression**
-* **Linear Support Vector Machine**
-* **Multi-Layer Perceptron (ANN)**
+- **Decision Tree** — interpretability and feature attribution
+- **Naïve Bayes** — probabilistic baseline and mutual information analysis
+- **Logistic Regression** — linear baseline under regularization
+- **Linear Support Vector Machine** — margin-based classifier in sparse spaces
+- **Multi-Layer Perceptron (ANN)** — non-linear interaction modeling
 
 ### Unsupervised Learning
 
-* **K-Means Clustering** — MITRE ATT&CK technique co-occurrence patterns
-
-  * Risk-weighted using a heuristic informed by MITRE documentation
-  * Cluster quality evaluated via silhouette score
-
----
-
-## Evaluation Metrics
-
-All classification results are evaluated using **macro-averaged** metrics to account for class imbalance:
-
-* Accuracy
-* Precision
-* Recall
-* F1-score
+- **K-Means Clustering** — MITRE ATT&CK technique co-occurrence analysis
+    - Risk-weighted using a heuristic informed by MITRE documentation
+    - Cluster quality evaluated via silhouette score
 
 ---
 
@@ -102,14 +127,14 @@ All classification results are evaluated using **macro-averaged** metrics to acc
 ### 1) Installation
 
 ```bash
-pip install -r Requirements.txt
+pip install -r requirements.txt
 ```
 
 ---
 
 ### 2) Data Preparation
 
-**Stratified sampling and train/test split**
+Stratified sampling and train/test split:
 
 ```bash
 python preprocessing/dataset.py \
@@ -131,7 +156,7 @@ Detailed reproduction steps are documented in:
 ### 3) MITRE Feature Engineering
 
 Build MITRE ATT&CK risk features
-(*expects `all_techniques.csv` in the same folder*):
+(_expects `all_techniques.csv` in the same folder_):
 
 ```bash
 python preprocessing/mitre_feature_engineering.py
@@ -139,7 +164,7 @@ python preprocessing/mitre_feature_engineering.py
 
 ---
 
-### 4) Feature Group Importance (RQ1)
+### 4) Feature Group Importance
 
 Decision Tree:
 
@@ -155,7 +180,7 @@ python models/NaiveBayes.py
 
 ---
 
-### 5) MITRE Technique Pattern Clustering (RQ2)
+### 5) MITRE Technique Pattern Clustering
 
 ```bash
 python models/KMeans.py
@@ -169,9 +194,9 @@ python -m output.TechniquePatternPlotting
 
 ---
 
-### 6) Time-Based Feature Experiments (RQ3)
+### 6) Time-Based Feature Experiments
 
-Run all classifiers (ANN / LR / SVM) with and without time features:
+Run ANN, Logistic Regression, and SVM with and without time features:
 
 ```bash
 python models/ResultQ3.py
@@ -179,30 +204,9 @@ python models/ResultQ3.py
 
 ---
 
-## Key Findings (Summary)
-
-* Detection and organizational metadata are the strongest predictors of true positives.
-* Credential abuse and obfuscation-related MITRE techniques form the highest-risk clusters.
-* Time-based features improve Logistic Regression and ANN performance but degrade linear SVM under class imbalance.
-* Risk is driven more by *which techniques* are used than by the number of techniques involved.
-
----
-
-## Reproducibility
-
-* Stratified sampling and cross-validation used throughout
-* Deterministic preprocessing
-* Identical evaluation protocol across models
-* All plots and tables generated programmatically
-
----
-
 ## Authors
 
-* Ella McKercher
-* Peiyu Wang
-* Yaxi Bai
-* Si Yong Lim
-
-School of Computing and Information Systems
-The University of Melbourne
+- Si Yong Lim
+- Ella McKercher
+- Peiyu Wang
+- Yaxi Bai
